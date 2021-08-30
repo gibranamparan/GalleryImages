@@ -1,15 +1,17 @@
 <template>
   <div class="home">
     <b-row>
-      <b-col v-for="img in images" :key="img.id" class="image">
+      <b-col v-for="img in imageList.images" :key="img.id" class="image">
         <img :src="img.cropped_picture" alt="" @click="openDetails(img.id)">
       </b-col>
     </b-row>
-
-<!--     
-       <b-modal :id="modalId" :title="title" size="lg" hide-footer
-        @show="show"
-    > -->
+    <b-row>
+      <b-col>
+        <span v-for="n in imageList.pageCount" :key="n">
+          <a href="#" @click.prevent="loadPage(n)">{{n}} </a> <span>|</span>
+        </span>
+      </b-col>
+    </b-row>
 
     <b-modal size="xl" title="Details" id="imageDetails" hide-footer>
       <ImageDetails :id="selectedID"
@@ -25,7 +27,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import ImageDetails from '@/components/ImageDetails.vue';
 import ImagesServices from '@/services/ImagesServices'
-import ImageAE from '@/models/ImageAE';
+import ImagesList from '@/models/ImagesList';
 
 @Component({
   name: 'Home',
@@ -34,30 +36,34 @@ import ImageAE from '@/models/ImageAE';
   },
 })
 export default class Home extends Vue {
-  private images:Array<ImageAE> = new Array<ImageAE>();
+  private imageList:ImagesList = new ImagesList();
   private selectedID = '';
   private prevID = '';
   private nextID = '';
 
   created() : void{
-    ImagesServices.getImages(2)
-    .then(res => {
-      if(res.length){
-        this.images = res;
-      } 
-      else console.error('No response from service: ', res);
-    })
+    this.loadPage(0);
   }
 
   openDetails(id:string){
     if(!id) return;
     
     this.selectedID = id;
-    const idx = this.images.findIndex(i => i.id == id);
-    this.prevID = this.images[idx-1]?.id || '';
-    this.nextID = this.images[idx+1]?.id || '';
+    const idx = this.imageList.images.findIndex(i => i.id == id);
+    this.prevID = this.imageList.images[idx-1]?.id || '';
+    this.nextID = this.imageList.images[idx+1]?.id || '';
 
     this.$bvModal.show('imageDetails');
+  }
+
+  loadPage(numberPage:number){
+    ImagesServices.getImages(numberPage)
+    .then(res => {
+      if(res?.images.length){
+        this.imageList = res;
+      } 
+      else console.error('No response from service: ', res);
+    })
   }
 }
 </script>
